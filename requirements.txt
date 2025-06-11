@@ -1,0 +1,4 @@
+PyQt6==6.6.1
+psutil==5.9.8
+pyyaml==6.0.1
+requests==2.31.0 
