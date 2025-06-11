@@ -499,8 +499,6 @@ class AddInstanceDialog(QDialog):
             return
         # 新增：判断所选版本是否已下载
         version = self.version_combo.currentText()
-        if version == "默认版本":
-            version = "default"
         if not self.parent.has_version(version):
             reply = QMessageBox.question(self, "版本未下载", f"所选版本 {version} 尚未下载，是否立即下载？", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
@@ -710,7 +708,7 @@ class ChromiumManager(QMainWindow):
     def get_chromium_path(self, version="default"):
         """根据版本获取 Chromium 可执行文件路径"""
         # 首先从配置文件中查找
-        if 'versions' in self.config and version in self.config['versions']:
+        if 'versions' in self.config and isinstance(self.config['versions'], dict) and version in self.config['versions']:
             config_path = self.config['versions'][version]['path']
             if os.path.exists(config_path):
                 return config_path
@@ -756,19 +754,9 @@ class ChromiumManager(QMainWindow):
                     self.config = {}
                 if 'instances' not in self.config or self.config['instances'] is None:
                     self.config['instances'] = []
-                
                 # 初始化版本配置
                 if 'versions' not in self.config:
                     self.config['versions'] = {}
-                
-                # 确保默认版本配置存在
-                if 'default' not in self.config['versions']:
-                    self.config['versions']['default'] = {
-                        'path': self.get_chromium_path("default"),
-                        'type': 'system',
-                        'description': '系统默认版本'
-                    }
-                
                 # 配置兼容性：补全每个实例缺失字段
                 default_fields = AddInstanceDialog(self)._get_default_values()
                 for inst in self.config['instances']:
@@ -777,13 +765,7 @@ class ChromiumManager(QMainWindow):
                             inst[k] = v
         except FileNotFoundError:
             self.config = {
-                "versions": {
-                    "default": {
-                        "path": self.get_chromium_path("default"),
-                        "type": "system",
-                        "description": "系统默认版本"
-                    }
-                },
+                "versions": {},
                 "instances": []
             }
             self.save_config()
@@ -1279,24 +1261,19 @@ class ChromiumManager(QMainWindow):
 
     def update_version_config(self, version, path):
         """更新版本配置"""
-        if 'versions' not in self.config:
+        if 'versions' not in self.config or not isinstance(self.config['versions'], dict):
             self.config['versions'] = {}
-        
         self.config['versions'][version] = {
             'path': path,
             'type': 'downloaded',
             'description': f'下载版本 {version}'
         }
-        
-        # 保存配置
         self.save_config()
 
     def has_version(self, version):
         """判断某个版本是否已下载（可用）"""
-        if version == "默认版本" or version == "default":
-            return True
         # 检查 config['versions'] 里有无该版本且路径存在
-        if 'versions' in self.config and version in self.config['versions']:
+        if 'versions' in self.config and isinstance(self.config['versions'], dict) and version in self.config['versions']:
             config_path = self.config['versions'][version]['path']
             if os.path.exists(config_path):
                 return True
