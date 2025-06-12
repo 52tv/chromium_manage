@@ -392,7 +392,6 @@ class AddInstanceDialog(QDialog):
         
         # 版本选择
         self.version_combo = QComboBox()
-        # self.version_combo.addItem("默认版本")
         if self.parent and hasattr(self.parent, 'available_versions'):
             for version in self.parent.available_versions:
                 self.version_combo.addItem(version['tag_name'])
@@ -403,6 +402,28 @@ class AddInstanceDialog(QDialog):
         base_form.addRow("时区:", self.timezone_edit)
         base_form.addRow("代理服务器:", self.proxy_server_edit)
         base_form.addRow("Chromium版本:", self.version_combo)
+        # 新增：指纹平台、平台版本、品牌
+        self.fingerprint_platform_combo = QComboBox()
+        self.fingerprint_platform_combo.addItems(["macos", "windows", "linux"])
+        self.fingerprint_platform_combo.setCurrentText(self.default_values.get("fingerprint_platform", "macos"))
+        self.fingerprint_platform_version_combo = QComboBox()
+        self._platform_versions = {
+            "windows": ["Windows 11", "Windows 10", "Windows 7"],
+            "macos": ["15.5","15.2", "14.0", "13.6"],
+            "linux": ["Ubuntu 22.04", "Debian 12", "CentOS 7"]
+        }
+        self.update_platform_versions(self.fingerprint_platform_combo.currentText())
+        # 设置默认值
+        default_version = self.default_values.get("fingerprint_platform_version", None)
+        if default_version and default_version in self._platform_versions[self.fingerprint_platform_combo.currentText()]:
+            self.fingerprint_platform_version_combo.setCurrentText(default_version)
+        self.fingerprint_platform_combo.currentTextChanged.connect(self.update_platform_versions)
+        self.fingerprint_brand_combo = QComboBox()
+        self.fingerprint_brand_combo.addItems(["Edge", "Chrome", "Firefox"])
+        self.fingerprint_brand_combo.setCurrentText(self.default_values.get("fingerprint_brand", "Chrome"))
+        base_form.addRow("指纹平台:", self.fingerprint_platform_combo)
+        base_form.addRow("平台版本:", self.fingerprint_platform_version_combo)
+        base_form.addRow("品牌:", self.fingerprint_brand_combo)
         base_group.setLayout(base_form)
         layout.addWidget(base_group)
         
@@ -518,6 +539,10 @@ class AddInstanceDialog(QDialog):
                     return
             else:
                 return  # 用户取消
+        # 新增：校验平台和品牌
+        if not self.fingerprint_platform_version_combo.currentText().strip():
+            QMessageBox.warning(self, "提示", "平台版本不能为空！")
+            return
         self.accept()
 
     def get_instance_data(self):
@@ -528,6 +553,9 @@ class AddInstanceDialog(QDialog):
             "timezone": self.timezone_edit.text(),
             "proxy_server": self.proxy_server_edit.text(),
             "chromium_version": self.version_combo.currentText(),
+            "fingerprint_platform": self.fingerprint_platform_combo.currentText(),
+            "fingerprint_platform_version": self.fingerprint_platform_version_combo.currentText(),
+            "fingerprint_brand": self.fingerprint_brand_combo.currentText(),
             "resolution": self.resolution_edit.text(),
             "font_fingerprint": self.font_fingerprint_edit.text(),
             "webrtc": self.webrtc_combo.currentText(),
@@ -546,6 +574,11 @@ class AddInstanceDialog(QDialog):
             "ssl_fingerprint": self.ssl_fingerprint_combo.currentText(),
             "speaker_protection": self.speaker_protection_combo.currentText()
         }
+
+    def update_platform_versions(self, platform):
+        self.fingerprint_platform_version_combo.clear()
+        versions = self._platform_versions.get(platform, [])
+        self.fingerprint_platform_version_combo.addItems(versions)
 
 class VerifyFingerprintDialog(QDialog):
     def __init__(self, parent=None, instance=None):
@@ -607,6 +640,13 @@ class VerifyFingerprintDialog(QDialog):
         cmd.extend([f"--timezone={self.instance['timezone']}"])
         if self.instance['proxy_server']:
             cmd.extend([f"--proxy-server={self.instance['proxy_server']}"])
+        # 新增：指纹平台、平台版本、品牌
+        if self.instance.get('fingerprint_platform'):
+            cmd.append(f"--fingerprint-platform={self.instance['fingerprint_platform']}")
+        if self.instance.get('fingerprint_platform_version'):
+            cmd.append(f"--fingerprint-platform-version={self.instance['fingerprint_platform_version']}")
+        if self.instance.get('fingerprint_brand'):
+            cmd.append(f"--fingerprint-brand={self.instance['fingerprint_brand']}")
         cmd.append(site_url)
         
         try:
@@ -1006,6 +1046,10 @@ class ChromiumManager(QMainWindow):
             else:
                 default_values['user_data_dir'] = f"/tmp/chromium/default{data_dir_num:03d}"
             default_values['fingerprint'] = str(fingerprint_num)
+            # 新增：默认值补全
+            default_values.setdefault('fingerprint_platform', 'windows')
+            default_values.setdefault('fingerprint_platform_version', '10.0.0')
+            default_values.setdefault('fingerprint_brand', 'Google')
         
         dialog = AddInstanceDialog(self, default_values)
         if dialog.exec():
@@ -1051,6 +1095,10 @@ class ChromiumManager(QMainWindow):
             return
 
         instance = self.config['instances'][current_row]
+        # 新增：补全缺失字段
+        instance.setdefault('fingerprint_platform', 'windows')
+        instance.setdefault('fingerprint_platform_version', '10.0.0')
+        instance.setdefault('fingerprint_brand', 'Google')
         dialog = AddInstanceDialog(self, instance)  # 使用当前实例的配置作为默认值
 
         if dialog.exec():
@@ -1134,8 +1182,14 @@ class ChromiumManager(QMainWindow):
         cmd.extend([f"--timezone={instance['timezone']}"])
         if instance['proxy_server']:
             cmd.extend([f"--proxy-server={instance['proxy_server']}"])
-
-        print("启动命令：", cmd)  # 打印命令，方便你手动测试
+        # 新增：指纹平台、平台版本、品牌
+        if instance.get('fingerprint_platform'):
+            cmd.append(f"--fingerprint-platform={instance['fingerprint_platform']}")
+        if instance.get('fingerprint_platform_version'):
+            cmd.append(f"--fingerprint-platform-version={instance['fingerprint_platform_version']}")
+        if instance.get('fingerprint_brand'):
+            cmd.append(f"--fingerprint-brand={instance['fingerprint_brand']}")
+        print("启动命令：", cmd)
 
         try:
             # 捕获标准输出和错误输出
