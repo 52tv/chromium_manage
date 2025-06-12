@@ -55,4 +55,4 @@ DownLoad/
 *.log
 
 # Config files with sensitive data
-# config.yaml  # 如果需要保留配置文件，可以注释掉这行 
+config.yaml  # 如果需要保留配置文件，可以注释掉这行 
