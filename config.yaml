@@ -1,2 +1,52 @@
-instances: []
+instances:
+- audiocontext: 随机
+  canvas: 随机
+  chromium_version: 136.0.7103.113
+  client_rects: 随机
+  device_memory: 8
+  device_name: 随机
+  do_not_track: 开启
+  fingerprint: '1000'
+  font_fingerprint: 跟随系统
+  hardware_concurrency: 12
+  mac_address: 自定义
+  media_devices: 随机
+  name: Instance 1
+  proxy_server: ''
+  resolution: 跟随系统
+  speaker_protection: 开启
+  speech_voices: 随机
+  ssl_fingerprint: 关闭
+  timezone: Asia/Hong_Kong
+  user_data_dir: /tmp/chromium/default001
+  webgl_image: 随机
+  webgl_info: 自定义
+  webrtc: 禁止
+- audiocontext: 随机
+  canvas: 随机
+  chromium_version: 136.0.7103.113
+  client_rects: 随机
+  device_memory: 8
+  device_name: 随机
+  do_not_track: 开启
+  fingerprint: '1001'
+  font_fingerprint: 跟随系统
+  hardware_concurrency: 12
+  mac_address: 自定义
+  media_devices: 随机
+  name: Instance 2
+  proxy_server: ''
+  resolution: 跟随系统
+  speaker_protection: 开启
+  speech_voices: 随机
+  ssl_fingerprint: 关闭
+  timezone: Asia/Hong_Kong
+  user_data_dir: /tmp/chromium/default002
+  webgl_image: 随机
+  webgl_info: 自定义
+  webrtc: 禁止
 versions:
+  136.0.7103.113:
+    description: 下载版本 136.0.7103.113
+    path: /Users/lvrenzhong/CursorProject/chromium_manage/App/macos/136.0.7103.113/Chromium.app/Contents/MacOS/Chromium
+    type: downloaded
